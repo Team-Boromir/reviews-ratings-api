@@ -102,3 +102,9 @@ dist
 
 # TernJS port file
 .tern-port
+
+# Old data of Reviews
+./OldData
+
+.DS_Store
+package-lock.json
