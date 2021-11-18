@@ -1,6 +1,12 @@
 {
+  "name": "sdc-catwalk-api",
+  "version": "1.0.0",
+  "description": "RESTful API with Node.js, Express, and PostgreSQL",
+  "main": "index.js",
+  "license": "MIT",
+
   "scripts": {
-    "serve": "nodemon app.js"
+    "server": "nodemon server/index.js"
   },
   "devDependencies": {
     "jest": "^27.3.1",
