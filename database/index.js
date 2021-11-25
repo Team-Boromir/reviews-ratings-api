@@ -18,9 +18,27 @@ const pool = new Pool({
 
 // Database Queries
 const getReviewsById = (req, res) => {
-  const product_id = parseInt(req.query.product_id)
+  const page = req.query.page || 1;
+  const count = req.query.count || 5;
+  const sort = req.query.sort;
+  const product_id = parseInt(req.query.product_id);
 
-  pool.query('SELECT * FROM reviews WHERE product_id = $1', [product_id], (error, results) => {
+  var rankBy;
+  if (sort === 'newest') {
+    rankBy = 'date DESC';
+  } else if (sort === 'helpful') {
+    rankBy = 'helpfulness DESC';
+  } else {
+    rankBy = 'helpfulness DESC, date DESC';
+  }
+
+  var limit = page * count;
+  var offset = (page - 1) * count;
+
+  // console.log(rankBy, limit, offset);
+  console.log(format('SELECT * FROM reviews WHERE product_id = %s ORDER BY %s LIMIT %s OFFSET %s', product_id, rankBy, limit, offset));
+
+  pool.query(format('SELECT * FROM reviews WHERE product_id = %s ORDER BY %s LIMIT %s OFFSET %s', product_id, rankBy, limit, offset), (error, results)=> {
     if (error) {
       throw error
     }

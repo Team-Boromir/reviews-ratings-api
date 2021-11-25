@@ -22,10 +22,7 @@ app.get('/', (req, res) => {
 
 // Get reviews
 app.get('/reviews/', (req, res) => {
-  const page = req.query.page || 1;
-  const count = req.query.count || 5;
-  const sort = req.query.sort;
-  const product_id = req.query.product_id;
+  
   db.getReviewsById(req, res);
   // console.log(page, count, sort, product_id);
 
