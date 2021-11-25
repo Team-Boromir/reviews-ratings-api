@@ -8,13 +8,6 @@ const pool = new Pool({
   database: 'reviews'
 });
 
-// connection.connect((err) => {
-//   if (err) {
-//     console.log(err);
-//   } else {
-//     console.log('Connected to PostgreSQL!');
-//   }
-// });
 
 // Database Queries
 const getReviewsById = (req, res) => {
@@ -36,7 +29,7 @@ const getReviewsById = (req, res) => {
   var offset = (page - 1) * count;
 
   // console.log(rankBy, limit, offset);
-  console.log(format('SELECT * FROM reviews WHERE product_id = %s ORDER BY %s LIMIT %s OFFSET %s', product_id, rankBy, limit, offset));
+  // console.log(format('SELECT * FROM reviews WHERE product_id = %s ORDER BY %s LIMIT %s OFFSET %s', product_id, rankBy, limit, offset));
 
   pool.query(format('SELECT * FROM reviews WHERE product_id = %s ORDER BY %s LIMIT %s OFFSET %s', product_id, rankBy, limit, offset), (error, results)=> {
     if (error) {
@@ -89,11 +82,42 @@ const postReviews = (req, res) => {
 const getMeta = (req, res) => {
   const product_id = parseInt(req.query.product_id)
 
-  pool.query('SELECT * FROM reviews WHERE product_id = $1', [product_id], (error, results) => {
+  pool.query('SELECT sum (case when recommend = true then 1 end) as rec_true, sum(case when recommend = false then 1 end) as rec_false, sum(case when rating = 1 then 1 end) as rating1, sum(case when rating = 2 then 1 end) as rating2, sum(case when rating = 3 then 1 end) as rating3, sum(case when rating = 4 then 1 end) as rating4, sum(case when rating = 5 then 1 end) as rating5 FROM reviews WHERE product_id = $1 ', [product_id], (error, results) => {
     if (error) {
-      throw error
+      res.sendStatus(500);
+      throw error;
+    } else {
+      pool.query('select rc.name, rc.id, ROUND(avg(value), 4) from reviews_characteristics rc join reviews_characteristic_review rcr on rcr.characteristic_id = rc.id where rc.product_id = $1 group by rc.id ORDER BY rc.id ASC', [product_id], (error, results1) => {
+        // console.log(results, results1);
+        if (error) {
+          res.sendStatus(500);
+          throw error;
+        }
+
+        var meta = {
+          "product_id": product_id,
+          "ratings": {},
+          "recommended": {},
+          "characteristics": {}
+        }
+
+        for (var i = 1; i < 6; i++) {
+          key = 'rating' + i;
+          if (results.rows[0][key] !== null && results.rows[0][key] !== '0') {
+            meta.ratings[i] = Number(results.rows[0][key]);
+          }
+        }
+
+        meta.recommended[0] = Number(results.rows[0].rec_false);
+        meta.recommended[1] = Number(results.rows[0].rec_true);
+
+        for (var i = 0; i < results1.rows.length; i++) {
+          meta.characteristics[results1.rows[i].name] = {id: results1.rows[i].id, value: results1.rows[i].round}
+        }
+        console.log(meta);
+        res.status(200).json(meta);
+      });
     }
-    res.status(200).json(results.rows);
     // res.sendStatus(200);
   })
 }
